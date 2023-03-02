@@ -1,0 +1,79 @@
+<package>
+<job>
+<runtime>
+<description>Excel File Conversion Tool</description>
+<example>cscript xlconv.wsf /outdir:out /f input.html</example>
+<named name="outdir" helpstring="Output directory. Default: current working directory." type="string" />
+<named name="f" helpstring="Overwrite output file if it already exists" />
+<named name="v" helpstring="Verbose mode" />
+<unnamed name="input" helpstring="Input file supported by Excel" type="string" required="1" many="true" />
+</runtime>
+<script language="VBScript">
+Option Explicit
+
+If WScript.Arguments.Unnamed.Count = 0 Then
+	WScript.Arguments.ShowUsage
+	WScript.Quit 1
+End If
+
+Dim App
+Set App = CreateObject("Excel.Application")
+App.DisplayAlerts = False 'don't ask whether we should overwrite
+
+Dim fso
+Set fso = CreateObject("Scripting.FileSystemObject")
+
+Dim success
+success = True
+
+Dim outdir
+If WScript.Arguments.Named.Exists("outdir") Then _
+	outdir = WScript.Arguments.Named("outdir") _
+Else _
+	outdir = fso.GetAbsolutePathName(".")
+
+Dim input
+For Each input In WScript.Arguments.Unnamed
+	Dim output
+	output = fso.BuildPath(outdir, fso.GetBaseName(input) & ".xlsx")
+	Dim ex
+	ex = fso.FileExists(output)
+	If ex And Not WScript.Arguments.Named.Exists("f") Then
+		WScript.Echo "File already exists, specify /f to overwrite: " & output
+		success = False
+	Else
+		On Error Resume Next
+		If WScript.Arguments.Named.Exists("v") Then _
+			WScript.Echo "Reading " & input
+		App.Workbooks.Open(input)
+		If Err Then
+			WScript.Echo err.Description
+			success = False
+		Else
+			If WScript.Arguments.Named.Exists("v") Then
+				If ex Then
+					WScript.Echo "Overwriting " & output
+				Else
+					WScript.Echo "Creating " & output
+				End If
+			End If
+			App.Workbooks(1).SaveAs output, 51 'xlWorkbookDefault
+			If Err Then
+				WScript.Echo Err.Description
+				success = False
+			End If
+			If Not WScript.Arguments.Named.Exists("v") Then _
+				WScript.Echo output
+			App.Workbooks(1).Close
+		End If
+		On Error GoTo 0
+	End If
+Next 'input
+
+App.Quit
+Set App = Nothing
+
+If Not success Then WScript.Quit 1
+</script>
+</job>
+</package>
