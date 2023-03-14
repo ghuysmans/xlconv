@@ -1,1 +1,2 @@
 *.vbs eol=crlf
+*.wsf eol=crlf linguist-language=VBScript
