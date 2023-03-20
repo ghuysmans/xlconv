@@ -45,7 +45,7 @@ For Each input In WScript.Arguments.Unnamed
 		On Error Resume Next
 		If WScript.Arguments.Named.Exists("v") Then _
 			WScript.Echo "Reading " & input
-		App.Workbooks.Open(input)
+		App.Workbooks.Open(fso.GetAbsolutePathName(input))
 		If Err Then
 			WScript.Echo err.Description
 			success = False
